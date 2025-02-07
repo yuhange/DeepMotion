@@ -111,8 +111,10 @@ while video.isOpened():
 
     video_keypoints.append(frame_keypoints)  # Store keypoints for this frame
 
-# Function to warp a single triangle
-def warp_triangle(img1, img2, t1, t2):
+import cv2
+import numpy as np
+
+def warp_triangle(img1, img2, t1, t2, feather_amount=5):  # Added feather_amount
     # Find bounding rectangle for each triangle
     r1 = cv2.boundingRect(np.float32([t1]))
     r2 = cv2.boundingRect(np.float32([t2]))
@@ -130,6 +132,11 @@ def warp_triangle(img1, img2, t1, t2):
     # Get mask by filling triangle
     mask = np.zeros((r2[3], r2[2], 3), dtype=np.float32)
     cv2.fillConvexPoly(mask, np.int32(t2_rect_int), (1.0, 1.0, 1.0), 16, 0)
+
+    # Create feathering mask
+    if feather_amount > 0:
+        kernel = np.ones((feather_amount, feather_amount), np.float32) / (feather_amount * feather_amount)
+        mask = cv2.filter2D(mask, -1, kernel)  # Apply blurring (feathering)
 
     # Apply warpImage to small rectangular patches
     M = cv2.getAffineTransform(np.float32(t1_rect), np.float32(t2_rect))
@@ -168,7 +175,6 @@ def warp_triangle(img1, img2, t1, t2):
     cropped_img2 = cropped_img2 * ((1.0, 1.0, 1.0) - resized_mask) + resized_img2_rect * resized_mask
     img2[y_start:y_end, x_start:x_end] = cropped_img2
 
-
 # Create the animated frames
 animated_frames = []
 for frame_keypoints in video_keypoints:
@@ -185,7 +191,7 @@ for frame_keypoints in video_keypoints:
         video_triangle = [frame_keypoints[index_pt1], frame_keypoints[index_pt2], frame_keypoints[index_pt3]]
 
         # Warp the triangle in the image
-        warp_triangle(image, warped_image, img_triangle, video_triangle)
+        warp_triangle(image, warped_image, img_triangle, video_triangle, feather_amount=5)
 
     animated_frames.append(warped_image)
 
