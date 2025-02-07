@@ -9,7 +9,7 @@ mp_drawing = mp.solutions.drawing_utils
 
 # Load Video and Image
 video_path = "train_video.mp4"
-image_path = "output_image.png"
+image_path = "output_image_v2.png"
 
 video = cv2.VideoCapture(video_path)
 image = cv2.imread(image_path)
@@ -190,8 +190,11 @@ for frame_keypoints in video_keypoints:
         img_triangle = [image_keypoints[index_pt1], image_keypoints[index_pt2], image_keypoints[index_pt3]]
         video_triangle = [frame_keypoints[index_pt1], frame_keypoints[index_pt2], frame_keypoints[index_pt3]]
 
-        # Warp the triangle in the image
+        # Warp the triangle in the image (with feathering)
         warp_triangle(image, warped_image, img_triangle, video_triangle, feather_amount=5)
+
+    # Post-processing (Bilateral Filtering)
+    warped_image = cv2.bilateralFilter(warped_image, d=9, sigmaColor=75, sigmaSpace=75)
 
     animated_frames.append(warped_image)
 
